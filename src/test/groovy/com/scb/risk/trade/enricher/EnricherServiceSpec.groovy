@@ -39,4 +39,29 @@ class EnricherServiceSpec extends Specification {
             'trade-enricher'    | 1         | '20160101,4,EUR,10.0'     || ['20160101,Bond4,EUR,10.0']
     }
 
+    void "when trades get processed, check if processed time before provided elapsed time"() {
+
+        given:
+            TradeProcessor processor = Mock(TradeProcessor) {
+                1 * offer(_)
+                _ * count() >> 0
+                _ * pop()  >> [data]
+            }
+            TradeEnricher enricher = new TradeEnricher(name, 10L, processor)
+
+        and:
+            InputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))
+
+        when:
+            Iterable<? extends TradeData> tradeData = enricher.processStream(inputStream)
+
+        then:
+            thrown RuntimeException
+
+        where:
+            name                | poolSize  | data                      | elaspedTime
+            'trade-enricher'    | 1         | '20160101,1,EUR,10.0'     | 0
+
+    }
+
 }
