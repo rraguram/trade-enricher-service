@@ -18,13 +18,17 @@ public class TradeEnricher {
     private static Logger log = LoggerFactory.getLogger(TradeEnricher.class);
     private final String name;
 
+    private final long tradeElaspedTimeinMillis;
+
     private final TradeProcessor processor;
 
-    TradeEnricher(String name, TradeProcessor processor) {
+    TradeEnricher(String name, long tradeElaspedTimeinMillis, TradeProcessor processor) {
         Preconditions.checkNotNull(name, "name is empty/null");
         Preconditions.checkNotNull(processor, "TradeProcessor arg is null");
+        Preconditions.checkArgument(tradeElaspedTimeinMillis > 0, "trade elapsed time should be positive");
         this.name = name;
         this.processor = processor;
+        this.tradeElaspedTimeinMillis = tradeElaspedTimeinMillis;
 
     }
 
@@ -52,7 +56,7 @@ public class TradeEnricher {
         while (tradeCount > enrichedTradeCount) {
             log.info("Raw trade count=[{}], processed trades count=[{}]", tradeCount, enrichedTradeCount);
 
-            if ((System.currentTimeMillis() - startTime) > 60_000) {
+            if ((System.currentTimeMillis() - startTime) > tradeElaspedTimeinMillis) {
                 throw new RuntimeException("Time out while processing the enrichment of trades");
             }
 

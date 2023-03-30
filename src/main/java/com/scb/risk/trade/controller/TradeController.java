@@ -24,10 +24,13 @@ public class TradeController {
     @Value("${trades.enrichment.service.pool.size:1}")
     private int tradeProcessorPoolSize=1;
 
+    @Value("${trades.elapsed.time.millis:60000}")
+    private long tradeElapsedTime=60_000L;
+
     private final TradeEnricher tradeEnricher;
 
     public TradeController() {
-        this.tradeEnricher = EnricherFactory.create("TradeEnricher", tradeProcessorPoolSize);
+        this.tradeEnricher = EnricherFactory.create("TradeEnricher", tradeProcessorPoolSize, tradeElapsedTime);
     }
 
     @RequestMapping(path = "enrich/", method = RequestMethod.POST)

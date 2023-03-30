@@ -19,7 +19,7 @@ class EnricherServiceSpec extends Specification {
                 1 * count() >> 1
                 1 * pop()  >> expectedData
             }
-            TradeEnricher enricher = new TradeEnricher(name, processor)
+            TradeEnricher enricher = new TradeEnricher(name, 10L, processor)
 
         and:
             InputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))
@@ -38,6 +38,5 @@ class EnricherServiceSpec extends Specification {
             'trade-enricher'    | 1         | '20160101,3,EUR,10.0'     || ['20160101,Bond3,EUR,10.0']
             'trade-enricher'    | 1         | '20160101,4,EUR,10.0'     || ['20160101,Bond4,EUR,10.0']
     }
-
 
 }

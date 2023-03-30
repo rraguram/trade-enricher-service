@@ -8,11 +8,11 @@ import com.scb.risk.trade.processor.TradeProcessor;
 
 public class EnricherFactory {
 
-    public static TradeEnricher create(String name, int poolSize) {
+    public static TradeEnricher create(String name, int poolSize, long tradeElapsedTime) {
         Preconditions.checkNotNull(name, "name is empty/null");
         Preconditions.checkArgument(poolSize > 0, "pool size must be positive");
 
         TradeProcessor<TradeRawData, TradeData> processor = new BaseTradeProcessor("trade-processor-"+name, poolSize);
-        return new TradeEnricher("trade-enricher-"+name, processor);
+        return new TradeEnricher("trade-enricher-"+name, tradeElapsedTime, processor);
     }
 }
