@@ -12,6 +12,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+/**
+ * Reference data implementation for <link>ProductData</link>, essentially
+ * provides singleton interface to init and read the static product data
+ * and exposes end point to read the static data.
+ *
+ * @See ProductData
+ */
 public class ProductDataService implements ReferenceData<ProductData> {
     private static Logger log = LoggerFactory.getLogger(ProductDataService.class);
 

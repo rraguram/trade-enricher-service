@@ -1,11 +1,12 @@
 package com.scb.risk.trade.controller;
 
+import com.scb.risk.trade.enricher.Enricher;
 import com.scb.risk.trade.enricher.EnricherFactory;
-import com.scb.risk.trade.enricher.TradeEnricher;
 import com.scb.risk.trade.model.TradeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,44 +19,45 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(path = "/api/v1/")
+@Configuration
+@PropertySource("classpath:application.properties")
 public class TradeController {
-    private static final Logger log = LoggerFactory.getLogger(TradeController.class);
-
-    @Value("${trades.enrichment.service.pool.size:1}")
-    private int tradeProcessorPoolSize=1;
-
-    @Value("${trades.elapsed.time.millis:60000}")
-    private long tradeElapsedTime=60_000L;
-
-    private final TradeEnricher tradeEnricher;
+    private static final Logger logger = LoggerFactory.getLogger(TradeController.class);
+    private final Enricher<TradeData> tradeEnricher;
 
     public TradeController() {
-        this.tradeEnricher = EnricherFactory.create("TradeEnricher", tradeProcessorPoolSize, tradeElapsedTime);
+        this.tradeEnricher = EnricherFactory.createTradeEnricher();
     }
 
     @RequestMapping(path = "enrich/", method = RequestMethod.POST)
     public void enrich(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        log.info("Processing the input trade request.");
-
-        Collection<? extends TradeData> trades;
+        logger.info("Processing the input trade request.");
 
         try {
-            trades = tradeEnricher.processStream(request.getInputStream());
+            tradeEnricher.processStream(request.getInputStream());
+
+            String csvOutput = "date,product_name,currency,price\n";
+            response.setContentType("text/csv; charset=utf-8");
+            response.getWriter().print(csvOutput);
+
+            while(!tradeEnricher.hasEnriched()) {
+                Collection<? extends TradeData> trades = tradeEnricher.getData();
+
+                if (trades != null && trades.size() > 0) {
+                    String tradeData = trades.stream()
+                            .map(TradeData::toString)
+                            .collect(Collectors.joining("\n"));
+
+                    response.getWriter().print(tradeData);
+                }
+            }
+
+            logger.info("Completed enriching the trades.");
         } catch (RuntimeException | InterruptedException ie) {
-            log.error("Error processing the trade stream, {}", ie);
-            return;
+            logger.error("Error processing the trade stream, {}", ie);
+        } finally {
+            tradeEnricher.close();
         }
 
-        if (trades == null || trades.isEmpty()) {
-            log.warn("Empty enriched processed trades from the input stream.");
-            return;
-        }
-
-        log.info("Processed trades, trades population size, = [{}]", trades.size());
-        String tradeData = trades.stream().map(TradeData::toString).collect(Collectors.joining("\n"));
-        String csvOutput = "date,product_name,currency,price\n" + tradeData;
-
-        response.setContentType("text/csv; charset=utf-8");
-        response.getWriter().print(csvOutput);
     }
 }

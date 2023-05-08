@@ -17,7 +17,13 @@ public interface TradeProcessor<R extends TradeRawData, T extends TradeData> {
 
     public int count();
 
+    public boolean isDone();
+
+    public void initialLoadDone();
+
     public Collection<T> pop();
 
     public void process();
+
+    public void close();
 }
